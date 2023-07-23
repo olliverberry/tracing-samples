@@ -1,0 +1,81 @@
+services:
+  db:
+    container_name: db
+    build: ./db/
+    env_file:
+      - .environment/.env.db
+    ports:
+      - "3306"
+    healthcheck:
+      test: |
+        mysql \
+          --user=root \
+          --password=$$MYSQL_ROOT_PASSWORD \
+          --database=$$MYSQL_DATABASE \
+          --execute='SELECT COUNT(*) FROM dogs' || exit 1
+      interval: 20s
+      timeout: 30s
+      retries: 3
+
+  app-otel:
+    container_name: app-otel
+    depends_on:
+      db:
+        condition: service_healthy
+    build: ./app-otel/
+    env_file:
+      - .environment/.env.app-otel
+    ports:
+      - "8081:3000"
+
+  app-datadog:
+    container_name: app-datadog
+    depends_on:
+      db:
+        condition: service_healthy
+    build: ./app-datadog/
+    labels:
+      com.datadoghq.tags.env: development
+      com.datadoghq.tags.version: '1.0.0'
+      com.datadoghq.tags.service: app-datadog
+    env_file:
+      - .environment/.env.app-datadog
+    ports:
+      - "8082:3000"
+  
+  frontend:
+    container_name: frontend
+    depends_on:
+      db:
+        condition: service_healthy
+    build: ./frontend/
+    ports:
+      - "8080:80"
+
+  dd-agent:
+    container_name: dd-agent
+    image: datadog/agent:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc/:/host/proc/:ro
+      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+    ports:
+      - 4318
+    env_file:
+      - .environment/.env.dd-agent
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector-contrib
+    command: [--config=/etc/otelcol-contrib/config.yaml]
+    volumes:
+      - ./otel-collector/collector.yaml:/etc/otelcol-contrib/config.yaml
+    env_file:
+      - .environment/.env.otel-collector
+    ports:
+      - "1888" # pprof extension
+      - "8888" # Prometheus metrics exposed by the collector
+      - "8889" # Prometheus exporter metrics
+      - "13133" # health_check extension
+      - "4318" # OTLP http receiver
+      - "55679" # zpages extension
