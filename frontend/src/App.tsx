@@ -2,22 +2,8 @@ import logo from './logo.svg';
 import './App.css';
 
 function App() {
-  const dogs = fetch('http://localhost:8081/api/dogs', { mode: 'cors', method: 'GET', })
+  const dogs = fetch(`${process.env.REACT_APP_API_BASE_URL}/api/dogs`, { mode: 'cors', method: 'GET', })
                 .then(response => response.json());
-  fetch('http://localhost:8081/api/dogs', {
-    method: 'POST',
-    mode: 'cors',
-    body: JSON.stringify({
-      id: 23,
-      name: 'test',
-      weight: 12,
-      breed: 'test',
-      age: 1,
-      color: 'test',
-    }),
-  }).then(response => {
-    console.log(response.status);
-  });
   return (
     <div className="App">
       <header className="App-header">
