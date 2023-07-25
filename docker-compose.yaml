@@ -3,7 +3,7 @@ services:
     container_name: db
     build: ./db/
     env_file:
-      - .environment/.env.db
+      - ./db/.env.local
     ports:
       - "3306"
     healthcheck:
@@ -22,9 +22,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     build: ./app-otel/
     env_file:
-      - .environment/.env.app-otel
+      - ./app-otel/.env.local
     ports:
       - "8081:3000"
 
@@ -33,13 +35,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      dd-agent:
+        condition: service_healthy
     build: ./app-datadog/
     labels:
       com.datadoghq.tags.env: development
       com.datadoghq.tags.version: '1.0.0'
       com.datadoghq.tags.service: app-datadog
     env_file:
-      - .environment/.env.app-datadog
+      - ./app-datadog/.env.local
     ports:
       - "8082:3000"
   
@@ -54,15 +58,15 @@ services:
 
   dd-agent:
     container_name: dd-agent
-    image: datadog/agent:latest
+    image: gcr.io/datadoghq/agent:7
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
     ports:
-      - 4318
+      - "4318"
     env_file:
-      - .environment/.env.dd-agent
+      - ./datadog/.env.local
 
   otel-collector:
     container_name: otel-collector
@@ -71,7 +75,7 @@ services:
     volumes:
       - ./otel-collector/collector.yaml:/etc/otelcol-contrib/config.yaml
     env_file:
-      - .environment/.env.otel-collector
+      - ./otel-collector/.env.local
     ports:
       - "1888" # pprof extension
       - "8888" # Prometheus metrics exposed by the collector

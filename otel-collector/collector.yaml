@@ -32,6 +32,9 @@ receivers:
         static_configs:
         - targets: ['0.0.0.0:8888']
 
+extensions:
+  health_check:
+
 processors:
   batch:
     send_batch_max_size: 100
