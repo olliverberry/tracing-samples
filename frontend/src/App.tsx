@@ -2,8 +2,6 @@ import logo from './logo.svg';
 import './App.css';
 
 function App() {
-  const dogs = fetch(`${process.env.REACT_APP_API_BASE_URL}/api/dogs`, { mode: 'cors', method: 'GET', })
-                .then(response => response.json());
   return (
     <div className="App">
       <header className="App-header">
@@ -13,7 +11,7 @@ function App() {
         </p>
         <a
           className="App-link"
-          href="https://reactjs.org"
+          href="https://other-app.stuartcmehrens.dev"
           target="_blank"
           rel="noopener noreferrer"
         >
